@@ -462,52 +462,95 @@ class UIBuilder:
 
 
 
-    def get_target_path(self):
-        entered_id = self._prim_id_input_model.get_value_as_string().strip()
-        if not entered_id:
-            self.feedback_label.text = "Please enter an ID!!"
-            return
+    def get_target_paths(self):
+        """
+        Read the text field and return a list of prim paths
+        for all comma-separated ids that exist in the stage.
+        Example input: 'PALLET_1, PALLET_2, BOX_A'
+        """
+        input_text = self._prim_id_input_model.get_value_as_string().strip()
+        if not input_text:
+            self.feedback_label.text = "Please enter one or more IDs!!"
+            return []
+
+        # IDs in the same order the user typed them
+        requested_ids = [s.strip() for s in input_text.split(",") if s.strip()]
+        if not requested_ids:
+            self.feedback_label.text = "Please enter one or more IDs!!"
+            return []
 
         stage = omni.usd.get_context().get_stage()
-        found_prim_path = None
 
+        # Build id → prim_path map in a single traverse
+        id_to_path = {}
         for prim in stage.Traverse():
             if not prim.IsValid():
                 continue
             attr = prim.GetAttribute("id")
-            if attr and attr.HasAuthoredValue() and str(attr.Get()) == entered_id:
-                found_prim_path = prim.GetPath().pathString
-                break
+            if attr and attr.HasAuthoredValue():
+                val = str(attr.Get())
+                if val in requested_ids and val not in id_to_path:
+                    id_to_path[val] = prim.GetPath().pathString
 
-        if not found_prim_path:
-            self.feedback_label.text = f"No prim found with id: {entered_id}"
-            return
-        return found_prim_path
+        found_paths = []
+        missing_ids = []
+        for rid in requested_ids:
+            if rid in id_to_path:
+                found_paths.append(id_to_path[rid])
+            else:
+                missing_ids.append(rid)
+
+        if not found_paths:
+            self.feedback_label.text = "No prims found for the given IDs."
+            return []
+
+        if missing_ids:
+            self.feedback_label.text = (
+                f"Found {len(found_paths)} item(s). "
+                f"Missing IDs: {', '.join(missing_ids)}"
+            )
+        else:
+            self.feedback_label.text = f"Found {len(found_paths)} item(s)."
+
+        return found_paths
 
 
 
     def _on_select_prim_by_id(self):
-        found_prim_path = self.get_target_path()
-        if found_prim_path:
+        paths = self.get_target_paths()
+        if not paths:
+            return
 
-            # Select prim
-            ctx = omni.usd.get_context()
-            ctx.get_selection().set_selected_prim_paths([found_prim_path], True)
+        # Select all matched prims
+        ctx = omni.usd.get_context()
+        ctx.get_selection().set_selected_prim_paths(paths, True)
 
-            # omni.kit.commands.execute("FramePrims", path=[found_prim_path])
-            self.feedback_label.text = f"Selected prim: {found_prim_path}"
+        self.feedback_label.text += f"  Selected {len(paths)} prim(s)."
 
     def _on_start_pickup(self):
-        if len(self.target_paths)>0: # there is an active movement
+    
+        if len(self.target_paths) > 0:
             return
-        found_prim_path = self.get_target_path()
-        if found_prim_path is None:
+
+        pallet_paths = self.get_target_paths()
+        if not pallet_paths:
             return
-        
+
+        # Start / resume timeline
         if not self._timeline.is_playing():
             self._timeline.play()
 
-        self.target_paths = [found_prim_path, DROP_PALLET]
+        # Build full sequence:
+        # PALLET_1 -> DROP_PALLET -> PALLET_2 -> DROP_PALLET -> ...
+        sequence = []
+        for p in pallet_paths:
+            sequence.append(p)          # go pick this pallet
+            sequence.append(DROP_PALLET)  # then go drop it
+
+        self.target_paths = sequence
+        self.feedback_label.text += (
+            f"  Pickup plan for {len(pallet_paths)} pallet(s) created."
+        )
 
         
 
