@@ -230,6 +230,16 @@ class UIBuilder:
                     }
                 })
         if not lift:
+            # After dropping, lower a bit more so we can slide under the next pallet
+            self.forklift_movement_plan.append({
+                'fun_name': self.move_fork,
+                'meta_data': {
+                    'lift': False,
+                    'mode': 'reset'
+                }
+            })
+
+            # Then move away as you already do
             self.forklift_movement_plan.append({
                     'fun_name': self.move_forward,
                     'meta_data': {
@@ -347,10 +357,21 @@ class UIBuilder:
         # print(f'[{forklift_pos[0]}, {forklift_pos[1]}],')
 
     def move_fork(self, meta_data):
+        # Simple mode logic: 
+        #   - normal pickup/drop (current behavior)
+        #   - "reset" (a bit lower so we can easily go under the next pallet)
+        mode = meta_data.get('mode', 'normal')
+
         if meta_data['lift']:
+            # carry height
             tar = 0.29
         else:
-            tar = 0.2
+            if mode == 'reset':
+                # slightly lower than normal drop so we can get under next pallet
+                tar = 0.05
+            else:
+                # current drop height
+                tar = 0.2
 
         xform_cache = UsdGeom.XformCache(Usd.TimeCode.Default())
 
@@ -360,11 +381,9 @@ class UIBuilder:
         lift_pos = target_world_transform.ExtractTranslation()
         lift_pos = np.array([lift_pos[0], lift_pos[1], lift_pos[2]])
 
-        
-
-        if lift_pos[2]<tar-0.05:
+        if lift_pos[2] < tar - 0.05:
             self.lift_current_speed += 0.05
-        elif lift_pos[2]>tar+0.05:
+        elif lift_pos[2] > tar + 0.05:
             self.lift_current_speed -= 0.05
         else:
             self.lift_current_speed = self.lift_current_speed
