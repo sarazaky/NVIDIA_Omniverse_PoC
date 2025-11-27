@@ -7,8 +7,8 @@
                 double radius = 5
             }
             dictionary Perspective = {
-                double3 position = (-8.264876150339862, -10.247930364903592, 21.14839397669838)
-                double3 target = (0.00009440263100657376, 2.500002306881104, 0.13519626980795252)
+                double3 position = (-3.102571824123176, -2.2855658821628726, 8.023541234067036)
+                double3 target = (0.00009440263100124469, 2.500002306881095, 0.13519626980796584)
             }
             dictionary Right = {
                 double3 position = (0, -5, 0)
@@ -329,6 +329,10 @@ def Xform "World"
         {
             uniform token physics:approximation = "convexHull"
             bool physics:collisionEnabled = 1
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
         }
 
         over "Looks"
@@ -339,6 +343,80 @@ def Xform "World"
             {
                 float physics:dynamicFriction = 0.2
                 float physics:staticFriction = 0.2
+            }
+        }
+    }
+
+    def "Cardbox_A1_02" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        prepend payload = @https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/ArchVis/Industrial/Containers/Cardboard/Cardbox_A1.usd@
+    )
+    {
+        custom string id = "box1"
+        bool physics:kinematicEnabled = 0
+        float physics:mass = 30
+        bool physics:rigidBodyEnabled = 1
+        quatf xformOp:orient = (0.70710677, 0, 0, 0.70710677)
+        float3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:scale:unitsResolve = (0.009999999776482582, 0.009999999776482582, 0.009999999776482582)
+        double3 xformOp:translate = (2.4691086229318406, 2.2048239818846547, 0.26999999999999996)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale", "xformOp:scale:unitsResolve"]
+
+        over "Cardbox_A1" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 1
+        }
+
+        over "Looks"
+        {
+            over "Cardboard_A" (
+                prepend apiSchemas = ["PhysicsMaterialAPI"]
+            )
+            {
+                float physics:dynamicFriction = 0.2
+                float physics:staticFriction = 0.2
+            }
+        }
+    }
+
+    def "Pallet_B2" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        prepend payload = @https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/ArchVis/Industrial/Pallets/Pallet_B1.usd@
+    )
+    {
+        custom string id = "pallet2"
+        bool physics:kinematicEnabled = 0
+        float physics:mass = 25
+        bool physics:rigidBodyEnabled = 1
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1, 1, 1.3)
+        double3 xformOp:scale:unitsResolve = (0.009999999776482582, 0.009999999776482582, 0.009999999776482582)
+        double3 xformOp:translate = (2.29165041916875, 2.2920181203362002, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale", "xformOp:scale:unitsResolve"]
+
+        over "Pallet_B1" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI", "PhysxSDFMeshCollisionAPI"]
+        )
+        {
+            uniform token physics:approximation = "sdf"
+            bool physics:collisionEnabled = 1
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+
+        over "Looks"
+        {
+            over "Pallet" (
+                prepend apiSchemas = ["PhysicsMaterialAPI"]
+            )
+            {
+                float physics:dynamicFriction = 1
+                float physics:staticFriction = 1
             }
         }
     }
@@ -391,8 +469,10 @@ def "Render" (
                 token omni:rtx:background:source:texture:textureMode = "repeatMirrored"
                 token omni:rtx:background:source:type = "domeLight"
                 bool omni:rtx:dlss:frameGeneration = 0
+                bool omni:rtx:material:db:nonVisualMaterialCSV:enabled = 0
                 string omni:rtx:material:db:rtSensorNameToIdMap = "DefaultMaterial:0;AsphaltStandardMaterial:1;AsphaltWeatheredMaterial:2;VegetationGrassMaterial:3;WaterStandardMaterial:4;GlassStandardMaterial:5;FiberGlassMaterial:6;MetalAlloyMaterial:7;MetalAluminumMaterial:8;MetalAluminumOxidizedMaterial:9;PlasticStandardMaterial:10;RetroMarkingsMaterial:11;RetroSignMaterial:12;RubberStandardMaterial:13;SoilClayMaterial:14;ConcreteRoughMaterial:15;ConcreteSmoothMaterial:16;OakTreeBarkMaterial:17;FabricStandardMaterial:18;PlexiGlassStandardMaterial:19;MetalSilverMaterial:20"
                 bool omni:rtx:material:db:syncLoads = 1
+                token omni:rtx:post:dlss:execMode = "performance"
                 bool omni:rtx:post:registeredCompositing:invertColorCorrection = 1
                 bool omni:rtx:post:registeredCompositing:invertToneMap = 1
                 bool omni:rtx:pt:lightcache:cached:dontResolveConflicts = 1

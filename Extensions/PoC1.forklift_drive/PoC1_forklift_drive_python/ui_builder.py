@@ -368,7 +368,7 @@ class UIBuilder:
         else:
             if mode == 'reset':
                 # slightly lower than normal drop so we can get under next pallet
-                tar = 0.05
+                tar = 0.03
             else:
                 # current drop height
                 tar = 0.2
